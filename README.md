@@ -1,5 +1,5 @@
 # heat-map
-v0 - Keyboard heat map script
+v1 - Keyboard heat map script
 
 # Requirements
 - pynput
