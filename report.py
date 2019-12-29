@@ -4,7 +4,7 @@ words_list = []
 
 with open('log.txt') as file:
     # read lines
-    data = file.read()
+    data = file.readlines()
     for line in data:
         # append the line without \n char
         words_list.append(line[:-1])
