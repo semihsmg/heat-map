@@ -1,8 +1,12 @@
 # heat-map
-v1 - Keyboard heat map script
+v1.2 - Keyboard heat map script
 
 # Requirements
 - pynput
 - Keyboard
 
-At this moment this script only logs key presses and saves them to txt file and runs in background.
+# Functions
+- Logs key presses
+- Saves them to txt file
+- Runs in background
+- Shows report
