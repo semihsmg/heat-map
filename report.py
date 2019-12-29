@@ -3,8 +3,8 @@ from collections import Counter
 words_list = []
 
 with open('log.txt') as file:
-    # read all lines
-    data = file.readlines()
+    # read lines
+    data = file.read()
     for line in data:
         # append the line without \n char
         words_list.append(line[:-1])
