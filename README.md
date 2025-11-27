@@ -2,6 +2,7 @@
 
 ![Windows](https://img.shields.io/badge/platform-Windows-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-green)
+![Privacy](https://img.shields.io/badge/privacy-100%25%20local-brightgreen)
 
 A system tray app that visualizes your keyboard usage as a glowing heat map.
 
@@ -30,6 +31,18 @@ pythonw main.pyw
 | **System Tray** | Runs in background, right-click for menu |
 | **Pause/Resume** | Toggle logging anytime |
 | **Startup Option** | Auto-launch with Windows |
+
+---
+
+## Privacy
+
+Your data stays on your machine. Period.
+
+- **100% offline** — No internet connection, no analytics, no telemetry
+- **Local storage only** — Everything stored in `%APPDATA%/KeyboardHeatMap/`
+- **No keystroke content** — Only counts which keys, not what you typed
+- **Aggregated daily totals** — No individual timestamps, just daily summaries
+- **You control your data** — Delete the database anytime to reset
 
 ---
 
