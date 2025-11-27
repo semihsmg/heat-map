@@ -146,3 +146,92 @@ def get_total_keystrokes(period: str = 'all') -> int:
 def get_today_count() -> int:
     """Quick helper to get today's keystroke count for tooltip."""
     return get_total_keystrokes('today')
+
+
+def get_tracking_start_date() -> str | None:
+    """Get the earliest date in the database (when tracking started)."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT MIN(date) FROM daily_counts')
+    result = cursor.fetchone()[0]
+    conn.close()
+    return result
+
+
+def get_days_tracked() -> int:
+    """Get the number of unique days with recorded data."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT COUNT(DISTINCT date) FROM daily_counts')
+    result = cursor.fetchone()[0]
+    conn.close()
+    return result or 0
+
+
+def get_most_active_day() -> tuple[str, int] | None:
+    """Get the day with the highest keystroke count."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT date, SUM(count) as total
+        FROM daily_counts
+        GROUP BY date
+        ORDER BY total DESC
+        LIMIT 1
+    ''')
+    result = cursor.fetchone()
+    conn.close()
+    if result:
+        return (result['date'], result['total'])
+    return None
+
+
+def get_current_streak() -> int:
+    """Get the current consecutive days streak."""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT DISTINCT date FROM daily_counts ORDER BY date DESC')
+    dates = [row['date'] for row in cursor.fetchall()]
+    conn.close()
+
+    if not dates:
+        return 0
+
+    streak = 0
+    today = date.today()
+    check_date = today
+
+    for date_str in dates:
+        recorded_date = date.fromisoformat(date_str)
+        if recorded_date == check_date:
+            streak += 1
+            check_date -= timedelta(days=1)
+        elif recorded_date < check_date:
+            # Gap found, streak ends
+            break
+
+    return streak
+
+
+def get_statistics() -> dict:
+    """Get all statistics for the heat map report."""
+    total = get_total_keystrokes('all')
+    days = get_days_tracked()
+    start_date = get_tracking_start_date()
+    most_active = get_most_active_day()
+    streak = get_current_streak()
+
+    # Calculate averages
+    keys_per_day = round(total / days) if days > 0 else 0
+    # Assume ~8 hours of active typing per day
+    keys_per_hour = round(keys_per_day / 8) if days > 0 else 0
+
+    return {
+        'total_keystrokes': total,
+        'tracking_since': start_date,
+        'days_tracked': days,
+        'keys_per_day': keys_per_day,
+        'keys_per_hour': keys_per_hour,
+        'most_active_day': most_active,
+        'current_streak': streak,
+    }

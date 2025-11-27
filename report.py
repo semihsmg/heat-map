@@ -89,10 +89,15 @@ KEYBOARD_LAYOUT = {
 def generate_html() -> str:
     """Generate the heat map HTML with all-time data."""
     key_counts = database.get_key_counts('all')
-    total_keys = database.get_total_keystrokes('all')
     top_keys = key_counts.most_common(10)
+    stats = database.get_statistics()
 
     max_count = max(key_counts.values()) if key_counts else 1
+
+    # Format statistics
+    tracking_since = stats['tracking_since'] or 'N/A'
+    most_active_day = stats['most_active_day']
+    most_active_str = f"{most_active_day[0]} ({most_active_day[1]:,})" if most_active_day else 'N/A'
 
     # Convert counts to JSON for JavaScript
     counts_json = json.dumps(dict(key_counts))
@@ -178,37 +183,53 @@ def generate_html() -> str:
             letter-spacing: 2px;
         }}
 
-        .stats-row {{
+        .stats-section {{
             display: flex;
             justify-content: center;
-            gap: 60px;
-            margin-bottom: 40px;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
         }}
 
-        .stat {{
+        .stat-card {{
+            background: var(--key-bg);
+            border: 1px solid var(--key-border);
+            border-radius: 8px;
+            padding: 14px 20px;
+            min-width: 120px;
             text-align: center;
+            box-shadow:
+                0 4px 0 #1a1a24,
+                0 6px 10px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }}
+
+        .stat-card:hover {{
+            transform: translateY(-2px);
+            box-shadow:
+                0 6px 0 #1a1a24,
+                0 8px 15px rgba(0, 0, 0, 0.4);
         }}
 
         .stat-value {{
             font-family: 'Orbitron', sans-serif;
-            font-size: 2.5rem;
+            font-size: 1.4rem;
             font-weight: 700;
             color: var(--accent);
-            text-shadow: 0 0 20px rgba(0, 255, 170, 0.4);
+            text-shadow: 0 0 15px rgba(0, 255, 170, 0.3);
         }}
 
         .stat-label {{
             color: var(--key-text);
             font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-top: 5px;
+            letter-spacing: 0.5px;
+            margin-top: 6px;
         }}
 
         .keyboard-container {{
             display: flex;
             justify-content: center;
-            margin-bottom: 50px;
+            margin-bottom: 30px;
         }}
 
         .keyboard {{
@@ -337,70 +358,107 @@ def generate_html() -> str:
             opacity: 0.7;
         }}
 
-        .top-keys {{
-            background: var(--bg-keyboard);
-            border-radius: 16px;
-            padding: 30px;
-            max-width: 500px;
-            margin: 0 auto;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }}
-
-        .top-keys h2 {{
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.2rem;
-            color: var(--accent);
-            margin-bottom: 20px;
+        .top-keys-section {{
             text-align: center;
-            letter-spacing: 2px;
         }}
 
-        .top-key-item {{
+        .top-keys-title {{
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75rem;
+            color: var(--key-text);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }}
+
+        .top-keys-list {{
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }}
+
+        .top-key-card {{
+            background: var(--key-bg);
+            border: 1px solid var(--key-border);
+            border-radius: 8px;
+            padding: 12px 16px;
+            min-width: 90px;
+            text-align: center;
+            box-shadow:
+                0 4px 0 #1a1a24,
+                0 6px 10px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }}
+
+        .top-key-card:hover {{
+            transform: translateY(-2px);
+            box-shadow:
+                0 6px 0 #1a1a24,
+                0 8px 15px rgba(0, 0, 0, 0.4);
+        }}
+
+        .top-key-card.glow-1 {{
+            background: linear-gradient(180deg, #2a3a38 0%, #2a2a38 100%);
+            border-color: rgba(0, 255, 170, 0.3);
+            box-shadow: 0 4px 0 #1a2a28, 0 6px 10px rgba(0, 0, 0, 0.3), 0 0 15px rgba(0, 255, 170, 0.1);
+        }}
+
+        .top-key-card.glow-2 {{
+            background: linear-gradient(180deg, #2a4a45 0%, #2a3a38 100%);
+            border-color: rgba(0, 255, 170, 0.5);
+            box-shadow: 0 4px 0 #1a3a35, 0 6px 10px rgba(0, 0, 0, 0.3), 0 0 20px rgba(0, 255, 170, 0.2);
+        }}
+
+        .top-key-card.glow-3 {{
+            background: linear-gradient(180deg, #2a5a52 0%, #2a4a45 100%);
+            border-color: rgba(0, 221, 255, 0.5);
+            box-shadow: 0 4px 0 #1a4a42, 0 6px 10px rgba(0, 0, 0, 0.3), 0 0 25px rgba(0, 255, 170, 0.3);
+        }}
+
+        .top-key-card.glow-4 {{
+            background: linear-gradient(180deg, #2a6a5f 0%, #2a5a52 100%);
+            border-color: rgba(0, 221, 255, 0.7);
+            box-shadow: 0 4px 0 #1a5a4f, 0 6px 10px rgba(0, 0, 0, 0.3), 0 0 30px rgba(0, 221, 255, 0.3);
+        }}
+
+        .top-key-card.glow-5 {{
+            background: linear-gradient(180deg, #3a7a6f 0%, #2a6a5f 100%);
+            border-color: rgba(0, 221, 255, 0.9);
+            box-shadow: 0 4px 0 #2a6a5f, 0 6px 10px rgba(0, 0, 0, 0.3), 0 0 35px rgba(0, 221, 255, 0.4);
+        }}
+
+        .top-key-card.glow-max {{
+            background: linear-gradient(180deg, #5a4a6a 0%, #4a3a5a 100%);
+            border-color: rgba(255, 0, 170, 0.9);
+            box-shadow: 0 4px 0 #3a2a4a, 0 6px 10px rgba(0, 0, 0, 0.3), 0 0 40px rgba(255, 0, 170, 0.5);
+            animation: pulse 2s ease-in-out infinite;
+        }}
+
+        .top-key-header {{
             display: flex;
             align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }}
-
-        .top-key-item:last-child {{
-            border-bottom: none;
+            justify-content: center;
+            gap: 6px;
+            margin-bottom: 4px;
         }}
 
         .top-key-rank {{
-            width: 30px;
             font-family: 'Orbitron', sans-serif;
-            font-size: 0.9rem;
+            font-size: 0.65rem;
             color: var(--key-text);
         }}
 
         .top-key-name {{
-            flex: 1;
-            font-weight: 600;
+            font-weight: 700;
+            font-size: 1rem;
             color: #fff;
-        }}
-
-        .top-key-bar {{
-            flex: 2;
-            height: 8px;
-            background: var(--key-bg);
-            border-radius: 4px;
-            margin: 0 15px;
-            overflow: hidden;
-        }}
-
-        .top-key-bar-fill {{
-            height: 100%;
-            background: linear-gradient(90deg, var(--glow-color), var(--glow-color-mid));
-            border-radius: 4px;
-            transition: width 0.5s ease;
         }}
 
         .top-key-count {{
             font-family: 'Orbitron', sans-serif;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: var(--accent);
-            min-width: 60px;
-            text-align: right;
         }}
 
         .footer {{
@@ -429,10 +487,30 @@ def generate_html() -> str:
             <p class="subtitle">Your typing patterns visualized</p>
         </header>
 
-        <div class="stats-row">
-            <div class="stat">
-                <div class="stat-value">{total_keys:,}</div>
+        <div class="stats-section">
+            <div class="stat-card">
+                <div class="stat-value">{stats['total_keystrokes']:,}</div>
                 <div class="stat-label">Total Keystrokes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{stats['keys_per_day']:,}</div>
+                <div class="stat-label">Keys per Day</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{stats['keys_per_hour']:,}</div>
+                <div class="stat-label">Keys per Hour</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{tracking_since}</div>
+                <div class="stat-label">Tracking Since</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{stats['days_tracked']}</div>
+                <div class="stat-label">Days Tracked</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{most_active_str}</div>
+                <div class="stat-label">Most Active Day</div>
             </div>
         </div>
 
@@ -444,9 +522,9 @@ def generate_html() -> str:
             </div>
         </div>
 
-        <div class="top-keys">
-            <h2>TOP 10 KEYS</h2>
-            <div id="top-keys-list"></div>
+        <div class="top-keys-section">
+            <div class="top-keys-title">Top 10 Keys</div>
+            <div class="top-keys-list" id="top-keys-list"></div>
         </div>
 
         <footer class="footer">
@@ -591,27 +669,24 @@ def generate_html() -> str:
             container.innerHTML = '';
 
             if (topKeys.length === 0) {{
-                container.innerHTML = '<p style="text-align: center; color: var(--key-text);">No data yet</p>';
+                container.innerHTML = '<p style="color: var(--key-text);">No data yet</p>';
                 return;
             }}
 
-            const maxTopCount = topKeys[0][1];
-
             topKeys.forEach((item, index) => {{
                 const [key, count] = item;
-                const percentage = (count / maxTopCount) * 100;
+                const glowClass = getGlowClass(count);
 
-                const itemDiv = document.createElement('div');
-                itemDiv.className = 'top-key-item';
-                itemDiv.innerHTML = `
-                    <span class="top-key-rank">${{index + 1}}.</span>
-                    <span class="top-key-name">${{key}}</span>
-                    <div class="top-key-bar">
-                        <div class="top-key-bar-fill" style="width: ${{percentage}}%"></div>
+                const card = document.createElement('div');
+                card.className = 'top-key-card' + (glowClass ? ' ' + glowClass : '');
+                card.innerHTML = `
+                    <div class="top-key-header">
+                        <span class="top-key-rank">#${{index + 1}}</span>
+                        <span class="top-key-name">${{key}}</span>
                     </div>
-                    <span class="top-key-count">${{count.toLocaleString()}}</span>
+                    <div class="top-key-count">${{count.toLocaleString()}}</div>
                 `;
-                container.appendChild(itemDiv);
+                container.appendChild(card);
             }});
         }}
 
