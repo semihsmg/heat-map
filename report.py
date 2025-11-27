@@ -112,6 +112,7 @@ def generate_html() -> str:
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <style>
         :root {{
             --bg-dark: #0a0a0f;
@@ -461,6 +462,58 @@ def generate_html() -> str:
             color: var(--accent);
         }}
 
+        .download-section {{
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+        }}
+
+        .download-btn {{
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--key-bg);
+            border: 1px solid var(--key-border);
+            border-radius: 8px;
+            padding: 12px 24px;
+            color: var(--key-text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow:
+                0 4px 0 #1a1a24,
+                0 6px 10px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }}
+
+        .download-btn:hover {{
+            transform: translateY(-2px);
+            color: var(--accent);
+            border-color: rgba(0, 255, 170, 0.3);
+            box-shadow:
+                0 6px 0 #1a1a24,
+                0 8px 15px rgba(0, 0, 0, 0.4),
+                0 0 15px rgba(0, 255, 170, 0.1);
+        }}
+
+        .download-btn:active {{
+            transform: translateY(2px);
+            box-shadow:
+                0 2px 0 #1a1a24,
+                0 4px 8px rgba(0, 0, 0, 0.3);
+        }}
+
+        .download-btn:disabled {{
+            opacity: 0.6;
+            cursor: not-allowed;
+        }}
+
+        .download-btn svg {{
+            width: 18px;
+            height: 18px;
+        }}
+
         .footer {{
             text-align: center;
             margin-top: 50px;
@@ -520,6 +573,17 @@ def generate_html() -> str:
                 <div class="keyboard-section" id="nav-section"></div>
                 <div class="keyboard-section" id="numpad-section"></div>
             </div>
+        </div>
+
+        <div class="download-section" id="download-section">
+            <button class="download-btn" id="download-btn" onclick="downloadScreenshot()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Download
+            </button>
         </div>
 
         <div class="top-keys-section">
@@ -695,6 +759,99 @@ def generate_html() -> str:
         renderKeyboard('nav', keyboardLayout.nav);
         renderKeyboard('numpad', keyboardLayout.numpad);
         renderTopKeys();
+
+        // Download screenshot with watermark
+        async function downloadScreenshot() {{
+            const btn = document.getElementById('download-btn');
+            const downloadSection = document.getElementById('download-section');
+            const container = document.querySelector('.container');
+
+            btn.disabled = true;
+            btn.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Capturing...
+            `;
+
+            // Hide download button for clean screenshot
+            downloadSection.style.display = 'none';
+
+            // Temporarily change title to solid color for screenshot
+            const title = document.querySelector('h1');
+            const originalStyle = title.style.cssText;
+            title.style.background = 'none';
+            title.style.webkitBackgroundClip = 'unset';
+            title.style.backgroundClip = 'unset';
+            title.style.webkitTextFillColor = 'var(--accent)';
+            title.style.color = 'var(--accent)';
+
+            try {{
+                // Capture the container with dark background
+                const canvas = await html2canvas(container, {{
+                    backgroundColor: '#0a0a0f',
+                    scale: 2,
+                    useCORS: true,
+                    logging: false
+                }});
+
+                // Add watermark
+                const ctx = canvas.getContext('2d');
+                const padding = 20;
+                const fontSize = 14;
+
+                ctx.font = `${{fontSize}}px JetBrains Mono, monospace`;
+                ctx.fillStyle = 'rgba(136, 136, 170, 0.8)';
+
+                // GitHub icon as path
+                const iconSize = 16;
+                const text = 'semihsmg/heat-map';
+                const textWidth = ctx.measureText(text).width;
+                const totalWidth = iconSize + 8 + textWidth;
+                const x = (canvas.width - totalWidth) / 2;
+                const y = canvas.height - padding;
+
+                // Draw GitHub icon
+                ctx.save();
+                ctx.translate(x, y - iconSize + 2);
+                ctx.scale(iconSize / 16, iconSize / 16);
+                ctx.fill(new Path2D('M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z'));
+                ctx.restore();
+
+                // Draw text
+                ctx.fillText(text, x + iconSize + 8, y);
+
+                // Download the image
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'keyboard-heatmap.png';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }} catch (error) {{
+                console.error('Download failed:', error);
+            }} finally {{
+                // Restore title style
+                title.style.cssText = originalStyle;
+
+                // Restore download button
+                downloadSection.style.display = 'flex';
+                btn.disabled = false;
+                btn.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Download
+                `;
+            }}
+        }}
     </script>
 </body>
 </html>'''
