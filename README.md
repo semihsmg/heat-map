@@ -13,7 +13,7 @@ A system tray app that visualizes your keyboard usage as a glowing heat map.
 ## Quick Start
 
 ```bash
-git clone https://github.com/yourusername/heat-map.git
+git clone https://github.com/semihsmg/heat-map.git
 cd heat-map
 pip install -r requirements.txt
 pythonw main.pyw
@@ -26,7 +26,6 @@ pythonw main.pyw
 | Feature | Description |
 |---------|-------------|
 | **Heat Map Visualization** | Keys glow brighter based on usage intensity |
-| **Time Filters** | View Today, This Week, This Month, or All Time |
 | **Top 10 Keys** | Bar chart of your most pressed keys |
 | **System Tray** | Runs in background, right-click for menu |
 | **Pause/Resume** | Toggle logging anytime |
@@ -62,7 +61,6 @@ Your data stays on your machine. Period.
 
 - The app only logs keys while running — check it's not paused
 - Verify the database exists at `%APPDATA%/KeyboardHeatMap/keystrokes.db`
-- Try selecting "All Time" instead of "Today"
 
 </details>
 
