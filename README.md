@@ -15,6 +15,12 @@ A system tray app that visualizes your keyboard usage as a glowing heat map.
 ```bash
 git clone https://github.com/semihsmg/heat-map.git
 cd heat-map
+```
+
+**Option A:** Double-click `run.bat` (auto-installs dependencies)
+
+**Option B:** Manual install
+```bash
 pip install -r requirements.txt
 pythonw main.pyw
 ```
