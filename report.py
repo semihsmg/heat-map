@@ -741,12 +741,15 @@ def generate_html() -> str:
                 const [key, count] = item;
                 const glowClass = getGlowClass(count);
 
+                // Capitalize single letter keys
+                const displayKey = key.length === 1 && key.match(/[a-z]/i) ? key.toUpperCase() : key;
+
                 const card = document.createElement('div');
                 card.className = 'top-key-card' + (glowClass ? ' ' + glowClass : '');
                 card.innerHTML = `
                     <div class="top-key-header">
                         <span class="top-key-rank">#${{index + 1}}</span>
-                        <span class="top-key-name">${{key}}</span>
+                        <span class="top-key-name">${{displayKey}}</span>
                     </div>
                     <div class="top-key-count">${{count.toLocaleString()}}</div>
                 `;
