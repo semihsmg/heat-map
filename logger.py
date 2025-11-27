@@ -20,6 +20,20 @@ class KeyLogger:
 
     def _parse_key(self, key) -> str:
         """Parse a pynput key object into a readable string."""
+        # Numpad virtual key codes (check first before char)
+        numpad_map = {
+            96: 'Num0', 97: 'Num1', 98: 'Num2', 99: 'Num3',
+            100: 'Num4', 101: 'Num5', 102: 'Num6', 103: 'Num7',
+            104: 'Num8', 105: 'Num9',
+            106: 'Num*', 107: 'Num+', 109: 'Num-',
+            110: 'Num.', 111: 'Num/',
+        }
+
+        # Check virtual key code first for numpad keys
+        if hasattr(key, 'vk') and key.vk is not None:
+            if key.vk in numpad_map:
+                return numpad_map[key.vk]
+
         try:
             # Regular character keys
             if hasattr(key, 'char') and key.char is not None:
@@ -84,21 +98,15 @@ class KeyLogger:
 
             return key_mapping.get(key_name, key_name.title())
 
-        # Handle numpad and other special cases
+        # Handle numpad and other special cases via string format
         if '<' in key_str and '>' in key_str:
             # Virtual key codes like <65437>
             vk_code = key_str.strip('<>')
             if vk_code.isdigit():
                 vk = int(vk_code)
-                # Common numpad virtual key codes
-                numpad_map = {
-                    96: 'Num0', 97: 'Num1', 98: 'Num2', 99: 'Num3',
-                    100: 'Num4', 101: 'Num5', 102: 'Num6', 103: 'Num7',
-                    104: 'Num8', 105: 'Num9',
-                    106: 'Num*', 107: 'Num+', 109: 'Num-',
-                    110: 'Num.', 111: 'Num/',
-                }
-                return numpad_map.get(vk, f'Key{vk}')
+                if vk in numpad_map:
+                    return numpad_map[vk]
+                return f'Key{vk}'
 
         return key_str
 
