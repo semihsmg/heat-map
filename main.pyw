@@ -45,7 +45,7 @@ class KeyboardHeatMapApp:
         return pystray.Menu(
             Item(
                 'Open Heat Map',
-                lambda icon, item: self._open_heatmap('today'),
+                lambda icon, item: self._open_heatmap(),
                 default=True
             ),
             pystray.Menu.SEPARATOR,
@@ -78,10 +78,10 @@ class KeyboardHeatMapApp:
         # Refresh menu to update text
         self.icon.menu = self._create_menu()
 
-    def _open_heatmap(self, period: str = 'all'):
+    def _open_heatmap(self):
         """Open the heat map in the browser."""
         self.key_logger.flush()  # Ensure latest data is saved
-        report.open_report(period)
+        report.open_report()
 
     def _toggle_startup(self, icon, item):
         """Toggle run at startup setting."""
