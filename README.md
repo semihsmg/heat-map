@@ -5,7 +5,6 @@
 
 A system tray app that visualizes your keyboard usage as a glowing heat map.
 
-<!-- TODO: Add screenshot of heat map -->
 ![Heat Map Preview](assets/screenshot-heatmap.png)
 
 ---
@@ -85,4 +84,4 @@ All data is stored locally in `%APPDATA%/KeyboardHeatMap/`. Nothing is transmitt
 
 ## License
 
-[MIT](LICENSE)
+[GNU General Public License v3.0](LICENSE)
