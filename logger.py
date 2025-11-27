@@ -1,14 +1,21 @@
 from pynput import keyboard
 from typing import Callable, Optional
+from collections import Counter
+import threading
 import database
 
 
 class KeyLogger:
-    """Handles keyboard event capture and logging."""
+    """Handles keyboard event capture and logging with buffered writes."""
+
+    FLUSH_INTERVAL = 30  # seconds
 
     def __init__(self):
         self.listener: Optional[keyboard.Listener] = None
         self.paused = False
+        self.buffer = Counter()
+        self.buffer_lock = threading.Lock()
+        self.flush_timer: Optional[threading.Timer] = None
         self.on_key_logged: Optional[Callable[[str], None]] = None
 
     def _parse_key(self, key) -> str:
@@ -101,26 +108,57 @@ class KeyLogger:
             return
 
         key_name = self._parse_key(key)
-        database.log_key(key_name)
+
+        with self.buffer_lock:
+            self.buffer[key_name] += 1
 
         if self.on_key_logged:
             self.on_key_logged(key_name)
 
+    def _schedule_flush(self):
+        """Schedule the next buffer flush."""
+        if self.flush_timer:
+            self.flush_timer.cancel()
+
+        self.flush_timer = threading.Timer(self.FLUSH_INTERVAL, self._auto_flush)
+        self.flush_timer.daemon = True
+        self.flush_timer.start()
+
+    def _auto_flush(self):
+        """Automatically flush buffer and reschedule."""
+        self.flush()
+        self._schedule_flush()
+
+    def flush(self):
+        """Flush the buffer to database."""
+        with self.buffer_lock:
+            if self.buffer:
+                database.flush_counts(self.buffer.copy())
+                self.buffer.clear()
+
     def start(self):
-        """Start the keyboard listener."""
+        """Start the keyboard listener and flush timer."""
         if self.listener is None or not self.listener.running:
             self.listener = keyboard.Listener(on_release=self._on_release)
             self.listener.start()
+            self._schedule_flush()
 
     def stop(self):
-        """Stop the keyboard listener."""
+        """Stop the keyboard listener and flush remaining buffer."""
+        if self.flush_timer:
+            self.flush_timer.cancel()
+            self.flush_timer = None
+
+        self.flush()  # Flush any remaining keystrokes
+
         if self.listener and self.listener.running:
             self.listener.stop()
             self.listener = None
 
     def pause(self):
-        """Pause logging (listener keeps running but ignores events)."""
+        """Pause logging and flush buffer."""
         self.paused = True
+        self.flush()
 
     def resume(self):
         """Resume logging."""
@@ -128,7 +166,10 @@ class KeyLogger:
 
     def toggle_pause(self) -> bool:
         """Toggle pause state. Returns new paused state."""
-        self.paused = not self.paused
+        if self.paused:
+            self.resume()
+        else:
+            self.pause()
         return self.paused
 
     @property

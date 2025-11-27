@@ -80,6 +80,7 @@ class KeyboardHeatMapApp:
 
     def _open_heatmap(self, period: str = 'all'):
         """Open the heat map in the browser."""
+        self.key_logger.flush()  # Ensure latest data is saved
         report.open_report(period)
 
     def _toggle_startup(self, icon, item):

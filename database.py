@@ -1,6 +1,6 @@
 import sqlite3
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from collections import Counter
 from pathlib import Path
 
@@ -26,33 +26,41 @@ def init_db():
     cursor = conn.cursor()
 
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS keystrokes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+        CREATE TABLE IF NOT EXISTS daily_counts (
             key TEXT NOT NULL,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            date TEXT NOT NULL,
+            count INTEGER DEFAULT 0,
+            PRIMARY KEY (key, date)
         )
     ''')
 
     cursor.execute('''
-        CREATE INDEX IF NOT EXISTS idx_timestamp ON keystrokes(timestamp)
-    ''')
-
-    cursor.execute('''
-        CREATE INDEX IF NOT EXISTS idx_key ON keystrokes(key)
+        CREATE INDEX IF NOT EXISTS idx_date ON daily_counts(date)
     ''')
 
     conn.commit()
     conn.close()
 
 
-def log_key(key: str):
-    """Log a single key press to the database."""
+def flush_counts(counts: Counter):
+    """
+    Flush buffered key counts to the database.
+    Uses UPSERT to increment existing counts or insert new rows.
+    """
+    if not counts:
+        return
+
+    today = date.today().isoformat()
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute(
-        'INSERT INTO keystrokes (key, timestamp) VALUES (?, ?)',
-        (key, datetime.now().isoformat())
-    )
+
+    for key, count in counts.items():
+        cursor.execute('''
+            INSERT INTO daily_counts (key, date, count)
+            VALUES (?, ?, ?)
+            ON CONFLICT(key, date) DO UPDATE SET count = count + excluded.count
+        ''', (key, today, count))
+
     conn.commit()
     conn.close()
 
@@ -70,34 +78,33 @@ def get_key_counts(period: str = 'all') -> Counter:
     conn = get_connection()
     cursor = conn.cursor()
 
-    now = datetime.now()
+    today = date.today()
 
     if period == 'today':
-        start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         cursor.execute(
-            'SELECT key, COUNT(*) as count FROM keystrokes WHERE timestamp >= ? GROUP BY key',
-            (start.isoformat(),)
+            'SELECT key, SUM(count) as total FROM daily_counts WHERE date = ? GROUP BY key',
+            (today.isoformat(),)
         )
     elif period == 'week':
         # Week starts on Monday
-        days_since_monday = now.weekday()
-        start = (now - timedelta(days=days_since_monday)).replace(hour=0, minute=0, second=0, microsecond=0)
+        days_since_monday = today.weekday()
+        start = today - timedelta(days=days_since_monday)
         cursor.execute(
-            'SELECT key, COUNT(*) as count FROM keystrokes WHERE timestamp >= ? GROUP BY key',
+            'SELECT key, SUM(count) as total FROM daily_counts WHERE date >= ? GROUP BY key',
             (start.isoformat(),)
         )
     elif period == 'month':
-        start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        start = today.replace(day=1)
         cursor.execute(
-            'SELECT key, COUNT(*) as count FROM keystrokes WHERE timestamp >= ? GROUP BY key',
+            'SELECT key, SUM(count) as total FROM daily_counts WHERE date >= ? GROUP BY key',
             (start.isoformat(),)
         )
     else:  # all
-        cursor.execute('SELECT key, COUNT(*) as count FROM keystrokes GROUP BY key')
+        cursor.execute('SELECT key, SUM(count) as total FROM daily_counts GROUP BY key')
 
     counts = Counter()
     for row in cursor.fetchall():
-        counts[row['key']] = row['count']
+        counts[row['key']] = row['total']
 
     conn.close()
     return counts
@@ -108,24 +115,32 @@ def get_total_keystrokes(period: str = 'all') -> int:
     conn = get_connection()
     cursor = conn.cursor()
 
-    now = datetime.now()
+    today = date.today()
 
     if period == 'today':
-        start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        cursor.execute('SELECT COUNT(*) FROM keystrokes WHERE timestamp >= ?', (start.isoformat(),))
+        cursor.execute(
+            'SELECT SUM(count) FROM daily_counts WHERE date = ?',
+            (today.isoformat(),)
+        )
     elif period == 'week':
-        days_since_monday = now.weekday()
-        start = (now - timedelta(days=days_since_monday)).replace(hour=0, minute=0, second=0, microsecond=0)
-        cursor.execute('SELECT COUNT(*) FROM keystrokes WHERE timestamp >= ?', (start.isoformat(),))
+        days_since_monday = today.weekday()
+        start = today - timedelta(days=days_since_monday)
+        cursor.execute(
+            'SELECT SUM(count) FROM daily_counts WHERE date >= ?',
+            (start.isoformat(),)
+        )
     elif period == 'month':
-        start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        cursor.execute('SELECT COUNT(*) FROM keystrokes WHERE timestamp >= ?', (start.isoformat(),))
+        start = today.replace(day=1)
+        cursor.execute(
+            'SELECT SUM(count) FROM daily_counts WHERE date >= ?',
+            (start.isoformat(),)
+        )
     else:
-        cursor.execute('SELECT COUNT(*) FROM keystrokes')
+        cursor.execute('SELECT SUM(count) FROM daily_counts')
 
     result = cursor.fetchone()[0]
     conn.close()
-    return result
+    return result or 0
 
 
 def get_today_count() -> int:
