@@ -3,6 +3,7 @@
 ![Windows](https://img.shields.io/badge/platform-Windows-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-green)
 ![Privacy](https://img.shields.io/badge/privacy-100%25%20local-brightgreen)
+[![GitHub Release](https://img.shields.io/github/v/release/semihsmg/heat-map)](https://github.com/semihsmg/heat-map/releases/latest)
 
 A system tray app that visualizes your keyboard usage as a glowing heat map.
 
@@ -10,16 +11,29 @@ A system tray app that visualizes your keyboard usage as a glowing heat map.
 
 ---
 
+## Download
+
+**[⬇ Download Latest Release](https://github.com/semihsmg/heat-map/releases/latest)** ... No installation required, just run the exe!
+
+---
+
 ## Quick Start
+
+### Option 1: Standalone Executable (Recommended)
+
+Download `KeyboardHeatMap.exe` from [Releases](https://github.com/semihsmg/heat-map/releases/latest) and run it.
+
+### Option 2: Run from Source
 
 ```bash
 git clone https://github.com/semihsmg/heat-map.git
 cd heat-map
 ```
 
-**Option A:** Double-click `run.bat` (auto-installs dependencies)
+**A)** Double-click `run.bat` (auto-installs dependencies & checks for updates)
 
-**Option B:** Manual install
+**B)** Manual install
+
 ```bash
 pip install -r requirements.txt
 pythonw main.pyw
@@ -32,10 +46,14 @@ pythonw main.pyw
 | Feature | Description |
 |---------|-------------|
 | **Heat Map Visualization** | Keys glow brighter based on usage intensity |
-| **Top 10 Keys** | Bar chart of your most pressed keys |
+| **Top 3 Highlight** | Most used keys shine purple |
+| **Top 10 Keys** | See your most pressed keys at a glance |
+| **Screenshot Export** | Download your heat map as PNG |
+| **Auto-Update** | Check for updates from the tray menu |
 | **System Tray** | Runs in background, right-click for menu |
 | **Pause/Resume** | Toggle logging anytime |
 | **Startup Option** | Auto-launch with Windows |
+| **Single Instance** | Prevents duplicate app instances |
 
 ---
 
