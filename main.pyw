@@ -5,6 +5,8 @@ import threading
 import tempfile
 import atexit
 import subprocess
+import json
+import urllib.request
 from pathlib import Path
 
 import pystray
@@ -15,6 +17,8 @@ import logger
 import report
 import icons
 
+__version__ = "0.3.0"
+GITHUB_REPO = "semihsmg/heat-map"
 
 # Single instance lock
 LOCK_FILE = Path(tempfile.gettempdir()) / 'keyboard_heatmap.lock'
@@ -200,44 +204,123 @@ class KeyboardHeatMapApp:
             pass  # Already removed or doesn't exist
 
     def _check_for_updates(self, icon, item):
-        """Check for updates via git pull and restart if updated."""
-        try:
-            # Get the app directory
-            app_dir = Path(__file__).parent
+        """Check for updates and apply them."""
+        # Run in background thread to not block UI
+        threading.Thread(target=self._do_update_check, args=(icon, item), daemon=True).start()
 
-            # Run git pull --ff-only
+    def _do_update_check(self, icon, item):
+        """Perform the actual update check."""
+        try:
+            if getattr(sys, 'frozen', False):
+                # Running as exe - use GitHub Releases
+                self._check_github_release(icon, item)
+            else:
+                # Running from source - use git pull
+                self._check_git_update(icon, item)
+        except Exception as e:
+            self._notify("Update Error", str(e)[:100])
+
+    def _check_git_update(self, icon, item):
+        """Check for updates via git pull (for development)."""
+        try:
+            app_dir = Path(__file__).parent
             result = subprocess.run(
                 ['git', 'pull', '--ff-only'],
                 cwd=app_dir,
                 capture_output=True,
                 text=True
             )
-
             output = result.stdout + result.stderr
 
             if 'Already up to date' in output:
                 self._notify("No Updates", "You're running the latest version.")
             elif result.returncode == 0:
-                # Updates were pulled, restart the app
                 self._notify("Updated!", "Restarting to apply updates...")
-
-                # Give notification time to show
                 threading.Event().wait(1)
-
-                # Start new instance
                 script_path = os.path.abspath(sys.argv[0])
                 pythonw_path = sys.executable.replace('python.exe', 'pythonw.exe')
                 subprocess.Popen([pythonw_path, script_path])
-
-                # Exit current instance
                 self._exit_app(icon, item)
             else:
                 self._notify("Update Failed", f"Could not update: {output[:100]}")
-
         except FileNotFoundError:
             self._notify("Git Not Found", "Git is not installed or not in PATH.")
-        except Exception as e:
-            self._notify("Update Error", str(e)[:100])
+
+    def _check_github_release(self, icon, item):
+        """Check GitHub releases for updates (for exe)."""
+        try:
+            # Get latest release from GitHub API
+            api_url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
+            req = urllib.request.Request(api_url, headers={'User-Agent': 'KeyboardHeatMap'})
+            with urllib.request.urlopen(req, timeout=10) as response:
+                release = json.loads(response.read().decode())
+
+            latest_version = release['tag_name'].lstrip('v')
+            current_version = __version__
+
+            # Compare versions
+            if self._compare_versions(latest_version, current_version) <= 0:
+                self._notify("No Updates", f"You're running the latest version (v{current_version}).")
+                return
+
+            # Find exe asset
+            exe_asset = None
+            for asset in release.get('assets', []):
+                if asset['name'].endswith('.exe'):
+                    exe_asset = asset
+                    break
+
+            if not exe_asset:
+                self._notify("Update Error", "No executable found in latest release.")
+                return
+
+            self._notify("Updating...", f"Downloading v{latest_version}...")
+
+            # Download new exe to temp
+            download_url = exe_asset['browser_download_url']
+            temp_dir = Path(tempfile.gettempdir())
+            new_exe_path = temp_dir / f"KeyboardHeatMap_v{latest_version}.exe"
+
+            req = urllib.request.Request(download_url, headers={'User-Agent': 'KeyboardHeatMap'})
+            with urllib.request.urlopen(req, timeout=60) as response:
+                with open(new_exe_path, 'wb') as f:
+                    f.write(response.read())
+
+            # Create batch script to replace exe and restart
+            current_exe = Path(sys.executable)
+            batch_path = temp_dir / "update_heatmap.bat"
+
+            batch_content = f'''@echo off
+timeout /t 2 /nobreak >nul
+copy /y "{new_exe_path}" "{current_exe}"
+del "{new_exe_path}"
+start "" "{current_exe}"
+del "%~f0"
+'''
+            with open(batch_path, 'w') as f:
+                f.write(batch_content)
+
+            self._notify("Updated!", f"Restarting with v{latest_version}...")
+            threading.Event().wait(1)
+
+            # Run batch script and exit
+            subprocess.Popen(['cmd', '/c', str(batch_path)], creationflags=subprocess.CREATE_NO_WINDOW)
+            self._exit_app(icon, item)
+
+        except urllib.error.URLError as e:
+            self._notify("Network Error", "Could not connect to GitHub.")
+        except json.JSONDecodeError:
+            self._notify("Update Error", "Invalid response from GitHub.")
+
+    def _compare_versions(self, v1: str, v2: str) -> int:
+        """Compare two version strings. Returns >0 if v1 > v2, <0 if v1 < v2, 0 if equal."""
+        def parse(v):
+            return [int(x) for x in v.split('.')]
+        p1, p2 = parse(v1), parse(v2)
+        for a, b in zip(p1, p2):
+            if a != b:
+                return a - b
+        return len(p1) - len(p2)
 
     def _update_tooltip(self):
         """Update the tooltip with today's keystroke count."""
