@@ -2,8 +2,8 @@
 
 ![Windows](https://img.shields.io/badge/platform-Windows-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-green)
-![Privacy](https://img.shields.io/badge/privacy-100%25%20local-brightgreen)
 [![GitHub Release](https://img.shields.io/github/v/release/semihsmg/heat-map)](https://github.com/semihsmg/heat-map/releases/latest)
+![Privacy](https://img.shields.io/badge/privacy-100%25%20local-brightgreen)
 
 A system tray app that visualizes your keyboard usage as a glowing heat map.
 
@@ -13,7 +13,7 @@ A system tray app that visualizes your keyboard usage as a glowing heat map.
 
 ## Download
 
-**[⬇ Download Latest Release](https://github.com/semihsmg/heat-map/releases/latest)** ... No installation required, just run the exe!
+**[Download Latest Release](https://github.com/semihsmg/heat-map/releases/latest)** ... No installation required, just run the exe!
 
 ---
 
