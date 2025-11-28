@@ -352,6 +352,32 @@ def generate_html() -> str:
             50% {{ box-shadow: 0 4px 0 #3a2a4a, 0 6px 10px rgba(0, 0, 0, 0.3), 0 0 60px rgba(255, 0, 170, 0.7); }}
         }}
 
+        /* Top 3 keys - purple shades */
+        .key.top-1 {{
+            background: linear-gradient(180deg, #6a3a7a 0%, #5a2a6a 100%);
+            border-color: rgba(255, 0, 170, 1);
+            color: #ff66ee;
+            text-shadow: 0 0 20px rgba(255, 0, 170, 0.9);
+            box-shadow: 0 4px 0 #4a1a5a, 0 6px 10px rgba(0, 0, 0, 0.3), 0 0 50px rgba(255, 0, 170, 0.6);
+            animation: pulse 2s ease-in-out infinite;
+        }}
+
+        .key.top-2 {{
+            background: linear-gradient(180deg, #5a3a6a 0%, #4a2a5a 100%);
+            border-color: rgba(255, 0, 170, 0.8);
+            color: #ee55dd;
+            text-shadow: 0 0 15px rgba(255, 0, 170, 0.7);
+            box-shadow: 0 4px 0 #3a1a4a, 0 6px 10px rgba(0, 0, 0, 0.3), 0 0 40px rgba(255, 0, 170, 0.4);
+        }}
+
+        .key.top-3 {{
+            background: linear-gradient(180deg, #4a3a5a 0%, #3a2a4a 100%);
+            border-color: rgba(255, 0, 170, 0.6);
+            color: #dd44cc;
+            text-shadow: 0 0 10px rgba(255, 0, 170, 0.5);
+            box-shadow: 0 4px 0 #2a1a3a, 0 6px 10px rgba(0, 0, 0, 0.3), 0 0 30px rgba(255, 0, 170, 0.3);
+        }}
+
         .key-count {{
             position: absolute;
             bottom: 2px;
@@ -435,6 +461,26 @@ def generate_html() -> str:
             border-color: rgba(255, 0, 170, 0.9);
             box-shadow: 0 4px 0 #3a2a4a, 0 6px 10px rgba(0, 0, 0, 0.3), 0 0 40px rgba(255, 0, 170, 0.5);
             animation: pulse 2s ease-in-out infinite;
+        }}
+
+        /* Top 3 cards - purple shades */
+        .top-key-card.top-1 {{
+            background: linear-gradient(180deg, #6a3a7a 0%, #5a2a6a 100%);
+            border-color: rgba(255, 0, 170, 1);
+            box-shadow: 0 4px 0 #4a1a5a, 0 6px 10px rgba(0, 0, 0, 0.3), 0 0 50px rgba(255, 0, 170, 0.6);
+            animation: pulse 2s ease-in-out infinite;
+        }}
+
+        .top-key-card.top-2 {{
+            background: linear-gradient(180deg, #5a3a6a 0%, #4a2a5a 100%);
+            border-color: rgba(255, 0, 170, 0.8);
+            box-shadow: 0 4px 0 #3a1a4a, 0 6px 10px rgba(0, 0, 0, 0.3), 0 0 40px rgba(255, 0, 170, 0.4);
+        }}
+
+        .top-key-card.top-3 {{
+            background: linear-gradient(180deg, #4a3a5a 0%, #3a2a4a 100%);
+            border-color: rgba(255, 0, 170, 0.6);
+            box-shadow: 0 4px 0 #2a1a3a, 0 6px 10px rgba(0, 0, 0, 0.3), 0 0 30px rgba(255, 0, 170, 0.3);
         }}
 
         .top-key-header {{
@@ -607,6 +653,12 @@ def generate_html() -> str:
         const topKeys = {top_keys_json};
         const maxCount = {max_count};
 
+        // Map top 3 keys for purple styling
+        const top3Keys = {{}};
+        topKeys.slice(0, 3).forEach((item, index) => {{
+            top3Keys[item[0]] = index + 1;  // 1, 2, or 3
+        }});
+
         const keyboardLayout = {{
             main: [
                 [
@@ -713,8 +765,15 @@ def generate_html() -> str:
                     }}
 
                     const count = keyCounts[keyId] || keyCounts[keyId.toLowerCase()] || 0;
-                    const glowClass = getGlowClass(count);
-                    if (glowClass) keyDiv.classList.add(glowClass);
+
+                    // Check if this is a top 3 key
+                    const topRank = top3Keys[keyId] || top3Keys[keyId.toLowerCase()];
+                    if (topRank) {{
+                        keyDiv.classList.add('top-' + topRank);
+                    }} else {{
+                        const glowClass = getGlowClass(count);
+                        if (glowClass) keyDiv.classList.add(glowClass);
+                    }}
 
                     keyDiv.innerHTML = label;
                     if (count > 0) {{
@@ -740,13 +799,18 @@ def generate_html() -> str:
 
             topKeys.forEach((item, index) => {{
                 const [key, count] = item;
-                const glowClass = getGlowClass(count);
 
                 // Capitalize single letter keys
                 const displayKey = key.length === 1 && key.match(/[a-z]/i) ? key.toUpperCase() : key;
 
                 const card = document.createElement('div');
-                card.className = 'top-key-card' + (glowClass ? ' ' + glowClass : '');
+                // Top 3 get purple styling, rest get glow class
+                if (index < 3) {{
+                    card.className = 'top-key-card top-' + (index + 1);
+                }} else {{
+                    const glowClass = getGlowClass(count);
+                    card.className = 'top-key-card' + (glowClass ? ' ' + glowClass : '');
+                }}
                 card.innerHTML = `
                     <div class="top-key-header">
                         <span class="top-key-rank">#${{index + 1}}</span>
