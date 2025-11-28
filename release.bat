@@ -10,8 +10,8 @@ if "%~1"=="" (
 
 set VERSION=%~1
 
-:: Validate version format (basic check)
-echo %VERSION% | findstr /r "^[0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*$" >nul
+:: Basic validation - check for two dots (X.Y.Z format)
+echo %VERSION% | findstr /c:"." >nul
 if errorlevel 1 (
     echo Invalid version format. Use semantic versioning: X.Y.Z
     exit /b 1
@@ -29,7 +29,7 @@ if errorlevel 1 (
 
 :: Stage and commit
 git add main.pyw
-git commit -m "Release v%VERSION%"
+git commit -m "v%VERSION%"
 
 if errorlevel 1 (
     echo Failed to commit
