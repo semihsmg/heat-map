@@ -197,7 +197,8 @@ def generate_html() -> str:
             border: 1px solid var(--key-border);
             border-radius: 8px;
             padding: 14px 20px;
-            min-width: 120px;
+            width: fit-content;
+            white-space: nowrap;
             text-align: center;
             box-shadow:
                 0 4px 0 #1a1a24,
@@ -792,12 +793,7 @@ def generate_html() -> str:
                 clone.style.padding = '80px';
                 clone.style.zIndex = '-9999';
                 // Apply background gradient directly to clone
-                clone.style.background = `
-                    radial-gradient(ellipse at 20% 80%, rgba(0, 255, 170, 0.08) 0%, transparent 50%),
-                    radial-gradient(ellipse at 80% 20%, rgba(255, 0, 170, 0.06) 0%, transparent 50%),
-                    radial-gradient(ellipse at 50% 50%, rgba(0, 221, 255, 0.04) 0%, transparent 60%),
-                    #0a0a0f
-                `;
+                clone.style.background = 'radial-gradient(ellipse at 20% 80%, rgba(0, 255, 170, 0.08) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(255, 0, 170, 0.06) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, rgba(0, 221, 255, 0.04) 0%, transparent 60%), #0a0a0f';
                 document.body.appendChild(clone);
 
                 // Hide download button in clone
@@ -805,7 +801,7 @@ def generate_html() -> str:
                 if (cloneDownloadSection) cloneDownloadSection.style.display = 'none';
 
                 const canvas = await html2canvas(clone, {{
-                    backgroundColor: null,
+                    backgroundColor: '#0a0a0f',
                     scale: 2,
                     useCORS: true,
                     allowTaint: true,
