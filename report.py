@@ -784,7 +784,7 @@ def generate_html() -> str:
             downloadSection.style.display = 'none';
 
             try {{
-                // Clone the container and position at 0,0 to fix html2canvas centering issues
+                // Clone the container and position at 0,0
                 const clone = container.cloneNode(true);
                 clone.style.position = 'absolute';
                 clone.style.left = '0';
@@ -792,8 +792,6 @@ def generate_html() -> str:
                 clone.style.margin = '0';
                 clone.style.padding = '80px';
                 clone.style.zIndex = '-9999';
-                // Apply background gradient directly to clone
-                clone.style.background = 'radial-gradient(ellipse at 20% 80%, rgba(0, 255, 170, 0.08) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(255, 0, 170, 0.06) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, rgba(0, 221, 255, 0.04) 0%, transparent 60%), #0a0a0f';
                 document.body.appendChild(clone);
 
                 // Hide download button in clone
@@ -801,7 +799,6 @@ def generate_html() -> str:
                 if (cloneDownloadSection) cloneDownloadSection.style.display = 'none';
 
                 const canvas = await html2canvas(clone, {{
-                    backgroundColor: '#0a0a0f',
                     scale: 2,
                     useCORS: true,
                     allowTaint: true,
