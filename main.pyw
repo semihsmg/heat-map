@@ -2,6 +2,8 @@ import sys
 import os
 import winreg
 import threading
+import tempfile
+import atexit
 from pathlib import Path
 
 import pystray
@@ -11,6 +13,54 @@ import database
 import logger
 import report
 import icons
+
+
+# Single instance lock
+LOCK_FILE = Path(tempfile.gettempdir()) / 'keyboard_heatmap.lock'
+
+
+def is_process_running(pid: int) -> bool:
+    """Check if a process with given PID is running (Windows)."""
+    import ctypes
+    PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+    STILL_ACTIVE = 259
+
+    kernel32 = ctypes.windll.kernel32
+    handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+    if handle == 0:
+        return False
+
+    exit_code = ctypes.c_ulong()
+    result = kernel32.GetExitCodeProcess(handle, ctypes.byref(exit_code))
+    kernel32.CloseHandle(handle)
+
+    if result == 0:
+        return False
+    return exit_code.value == STILL_ACTIVE
+
+
+def check_single_instance() -> bool:
+    """Check if another instance is already running. Returns True if this is the only instance."""
+    if LOCK_FILE.exists():
+        try:
+            pid = int(LOCK_FILE.read_text().strip())
+            if is_process_running(pid):
+                return False  # Another instance is running
+        except (ValueError, OSError):
+            pass  # Invalid lock file, we can take over
+
+    # Create/update lock file with our PID
+    LOCK_FILE.write_text(str(os.getpid()))
+    atexit.register(remove_lock_file)
+    return True
+
+
+def remove_lock_file():
+    """Remove the lock file on exit."""
+    try:
+        LOCK_FILE.unlink(missing_ok=True)
+    except Exception:
+        pass
 
 
 class KeyboardHeatMapApp:
@@ -183,6 +233,16 @@ class KeyboardHeatMapApp:
 
 def main():
     """Entry point."""
+    if not check_single_instance():
+        import ctypes
+        ctypes.windll.user32.MessageBoxW(
+            0,
+            "Another instance of Keyboard Heat Map is already running.",
+            "Keyboard Heat Map",
+            0x40  # MB_ICONINFORMATION
+        )
+        sys.exit(1)
+
     app = KeyboardHeatMapApp()
     app.run()
 
