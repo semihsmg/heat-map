@@ -791,6 +791,9 @@ def generate_html() -> str:
             title.style.webkitTextFillColor = 'var(--accent)';
             title.style.color = 'var(--accent)';
 
+            // Wait for DOM to render changes before capturing
+            await new Promise(resolve => setTimeout(resolve, 100));
+
             try {{
                 // Capture the container with dark background
                 const canvas = await html2canvas(container, {{
@@ -826,12 +829,14 @@ def generate_html() -> str:
                 // Draw text
                 ctx.fillText(text, x + iconSize + 8, y);
 
-                // Download the image
+                // Download the image with timestamp
                 const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
                 const url = URL.createObjectURL(blob);
+                const now = new Date();
+                const timestamp = now.toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = 'keyboard-heatmap.png';
+                a.download = `keyboard-heatmap-${{timestamp}}.png`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
