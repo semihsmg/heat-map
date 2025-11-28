@@ -4,6 +4,7 @@ import winreg
 import threading
 import tempfile
 import atexit
+import subprocess
 from pathlib import Path
 
 import pystray
@@ -105,6 +106,10 @@ class KeyboardHeatMapApp:
             ),
             pystray.Menu.SEPARATOR,
             Item(
+                'Check for Updates',
+                self._check_for_updates
+            ),
+            Item(
                 'Run at Startup',
                 self._toggle_startup,
                 checked=lambda item: self._is_startup_enabled()
@@ -193,6 +198,46 @@ class KeyboardHeatMapApp:
             winreg.CloseKey(key)
         except Exception:
             pass  # Already removed or doesn't exist
+
+    def _check_for_updates(self, icon, item):
+        """Check for updates via git pull and restart if updated."""
+        try:
+            # Get the app directory
+            app_dir = Path(__file__).parent
+
+            # Run git pull --ff-only
+            result = subprocess.run(
+                ['git', 'pull', '--ff-only'],
+                cwd=app_dir,
+                capture_output=True,
+                text=True
+            )
+
+            output = result.stdout + result.stderr
+
+            if 'Already up to date' in output:
+                self._notify("No Updates", "You're running the latest version.")
+            elif result.returncode == 0:
+                # Updates were pulled, restart the app
+                self._notify("Updated!", "Restarting to apply updates...")
+
+                # Give notification time to show
+                threading.Event().wait(1)
+
+                # Start new instance
+                script_path = os.path.abspath(sys.argv[0])
+                pythonw_path = sys.executable.replace('python.exe', 'pythonw.exe')
+                subprocess.Popen([pythonw_path, script_path])
+
+                # Exit current instance
+                self._exit_app(icon, item)
+            else:
+                self._notify("Update Failed", f"Could not update: {output[:100]}")
+
+        except FileNotFoundError:
+            self._notify("Git Not Found", "Git is not installed or not in PATH.")
+        except Exception as e:
+            self._notify("Update Error", str(e)[:100])
 
     def _update_tooltip(self):
         """Update the tooltip with today's keystroke count."""
