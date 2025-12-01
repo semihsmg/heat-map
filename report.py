@@ -856,6 +856,13 @@ def generate_html() -> str:
                 clone.style.margin = '0';
                 clone.style.padding = '80px';
                 clone.style.zIndex = '-9999';
+                // Add dark background with gradient glows
+                clone.style.background = `
+                    radial-gradient(ellipse at 20% 80%, rgba(0, 255, 170, 0.08) 0%, transparent 50%),
+                    radial-gradient(ellipse at 80% 20%, rgba(255, 0, 170, 0.06) 0%, transparent 50%),
+                    radial-gradient(ellipse at 50% 50%, rgba(0, 221, 255, 0.04) 0%, transparent 60%),
+                    #0a0a0f
+                `;
                 document.body.appendChild(clone);
 
                 // Hide download button in clone
@@ -866,7 +873,8 @@ def generate_html() -> str:
                     scale: 2,
                     useCORS: true,
                     allowTaint: true,
-                    foreignObjectRendering: true
+                    foreignObjectRendering: true,
+                    backgroundColor: '#0a0a0f'
                 }});
 
                 // Remove clone
