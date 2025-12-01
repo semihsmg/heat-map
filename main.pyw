@@ -17,7 +17,7 @@ import logger
 import report
 import icons
 
-__version__ = "0.7.0"
+__version__ = "0.7.1"
 GITHUB_REPO = "semihsmg/heat-map"
 
 # Single instance lock
